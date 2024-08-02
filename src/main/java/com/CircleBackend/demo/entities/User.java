@@ -19,6 +19,9 @@ public class User {
     private String phone;
     private String UserId;
     private String role;
+    private String secreString;
+    private String Ciphertext;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "wallet_id", referencedColumnName = "id")
     private Wallet wallet;
@@ -26,7 +29,7 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String firstName, String lastName, String email, String password, String phone, String userId, String role, Wallet wallet) {
+    public User(Long id, String firstName, String lastName, String email, String password, String phone, String userId, String role, String secreString, String ciphertext, Wallet wallet) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -35,7 +38,25 @@ public class User {
         this.phone = phone;
         UserId = userId;
         this.role = role;
+        this.secreString = secreString;
+        Ciphertext = ciphertext;
         this.wallet = wallet;
+    }
+
+    public String getCiphertext() {
+        return Ciphertext;
+    }
+
+    public void setCiphertext(String ciphertext) {
+        Ciphertext = ciphertext;
+    }
+
+    public String getSecreString() {
+        return secreString;
+    }
+
+    public void setSecreString(String secreString) {
+        this.secreString = secreString;
     }
 
     public String getRole() {

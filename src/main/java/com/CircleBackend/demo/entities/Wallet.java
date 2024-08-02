@@ -11,14 +11,24 @@ public class Wallet {
 
     private String address;
     private String balance;
+    private String walletId;
 
     public Wallet() {
     }
 
-    public Wallet(Long id, String address, String balance) {
+    public Wallet(Long id, String address, String balance, String walletId) {
         this.id = id;
         this.address = address;
         this.balance = balance;
+        this.walletId = walletId;
+    }
+
+    public String getWalletId() {
+        return walletId;
+    }
+
+    public void setWalletId(String walletId) {
+        this.walletId = walletId;
     }
 
     public Long getId() {
