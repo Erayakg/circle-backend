@@ -1,5 +1,6 @@
 package com.CircleBackend.demo.services;
 
+import com.CircleBackend.demo.dto.WalletResDto;
 import com.CircleBackend.demo.entities.User;
 import com.CircleBackend.demo.entities.Wallet;
 import com.CircleBackend.demo.repositories.UserRepository;
@@ -7,6 +8,7 @@ import com.CircleBackend.demo.repositories.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -14,7 +16,9 @@ import java.util.Optional;
 public class WalletService {
 
     private final CircleAPI circleAPI;
+
     private final UserRepository userRepository;
+
     private final WalletRepository walletRepository;
 
     @Autowired
@@ -23,7 +27,7 @@ public class WalletService {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
     }
-    public  String createWallet(Long UserId) throws Exception {
+    public  WalletResDto createWallet(Long UserId) throws Exception {
         Optional<User> user = userRepository.findById(UserId);
 
         if (user.isEmpty()){
@@ -32,15 +36,27 @@ public class WalletService {
         if (user.get().getWallet() != null) {
             throw new RuntimeException("Wallet already exists");
         }
-        Wallet wallet = new Wallet();
-        String secreString = circleAPI.generateSecret();
-        user.get().setSecreString(secreString);
+//        Wallet wallet = new Wallet();
+//        String secreString = circleAPI.generateSecret();
+//        user.get().setSecreString(secreString);
+//
+//        String chipperText = circleAPI.generateCiphertext(secreString);
+//        user.get().setCiphertext(chipperText);
+//        String response= circleAPI.createWallet();
+//        user.get().setWallet(wallet);
+//        System.out.println(response);
 
-        String chipperText = circleAPI.generateCiphertext(secreString);
-        user.get().setCiphertext(chipperText);
-        String response= circleAPI.createWallet();
-        user.get().setWallet(wallet);
-        System.out.println(response);
-        return response;
+            circleAPI.createWallet();
+        return new WalletResDto();
+
     }
+
+    public List<WalletResDto> getAllWallet() throws Exception {
+
+        circleAPI.getWallets();
+
+        return null;
+    }
+
+
 }

@@ -18,7 +18,10 @@ public class User {
     private String password;
     private String phone;
     private String UserId;
-    private String role;
+    
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     private String secreString;
     private String Ciphertext;
 
@@ -29,7 +32,7 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String firstName, String lastName, String email, String password, String phone, String userId, String role, String secreString, String ciphertext, Wallet wallet) {
+    public User(Long id, String firstName, String lastName, String email, String password, String phone, String userId, Role role, String secreString, String ciphertext, Wallet wallet) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -59,11 +62,11 @@ public class User {
         this.secreString = secreString;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 

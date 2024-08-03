@@ -1,5 +1,6 @@
 package com.CircleBackend.demo.controller;
 
+import com.CircleBackend.demo.dto.WalletResDto;
 import com.CircleBackend.demo.services.CircleAPI;
 import com.CircleBackend.demo.services.WalletService;
 import org.hibernate.internal.build.AllowNonPortable;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/v1/wallet")
 public class WalletController {
@@ -23,11 +26,14 @@ public class WalletController {
     }
 
     @GetMapping("/create/{id}")
-    public ResponseEntity<String> createWallet(@PathVariable Long id) throws Exception {
-        String wallet = walletService.createWallet(id);
+    public ResponseEntity<WalletResDto> createWallet(@PathVariable Long id) throws Exception {
+        WalletResDto wallet = walletService.createWallet(id);
         return new ResponseEntity<>(wallet, HttpStatus.CREATED);
     }
 
-
-
+    @GetMapping("/getAllWallet")
+    public ResponseEntity<List<WalletResDto>> getAllWallet() throws Exception {
+        List<WalletResDto> AllWallet = walletService.getAllWallet();
+        return new ResponseEntity<>(AllWallet, HttpStatus.ACCEPTED);
+    }
 }

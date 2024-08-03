@@ -1,4 +1,5 @@
 package com.CircleBackend.demo.services;
+import com.CircleBackend.demo.dto.WalletResDto;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -17,25 +18,27 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 @Component
-public class CircleAPI {
+public class CircleAPI  {
 
     public static final String API_KEY="TEST_API_KEY:ba4ab1d4b7e92f4a370154dd807be0db:48e096ee7ebc82cec0881ea23131ae2b";
     public static final String WALLET_SET_ID = "76357bcc-4ad4-5b0d-9200-a96a3ed5c129";
     public static final String  ENCRYPTED_DATA="pWWimvuB7lVQep18615nIiylhtT5Z7IhRF8EABfJ7njMuWsFLNlXpGzZKWNlecI03e07A7KFiHzs3dNNFGXWqKazJP316a61eEp1nK7e7dqN6io6im+LSCaONEd/Wd0VKyTYuBtrn4qbypXYJM3QPmjJjrgptRV0i/sd26EDbtGxP/LcX5BDBBc6xEKeLqvQuSWmEebd0LcwnikM/Eyu9sFa7ATQWT9PjqAfRrd3OF5B/vxr9b8L5bSMmxqj09D+mYv4BNHZkSL5APl3xfseI7DDmcPTMkJ3fOuC5xRrjoL/5jX2S6z54whytkRTvt1Iz59k9Gxj41WFvCluj5HWxFY5WwummvlOA7BI/letSJTcPwpulysWwOXmUHgoHbeb7gFeA1JIKANG7xTQRrqVhwoghIkxR2VYEwUVhSUWk0LcvnoibVCEGVgDWjTtEpn0iXoYHiTFvp0NY+pudqqAi+VAMRgB4kP5JqcPmE0kJ/4JjJ3R8Q0tQVnvWVnlLMP3FgfdZ8LB4xPsZnh8Bsd3SSv/RPCYbc0jQL7VfFqmOxYrtkKTTgz0XUFKH8BMc+ThPEUm0/ORcVxLUVqkDz1qbcEWtl82rk9QNbr8zBdGKL29FaUPooi++ROFHm1JheRjJUGFRwcAql8tBpCZMePDH9nX8mxxCneCqKO6raFIFXA=";
    static String ENTITY_SECRET="f25dffbd11f9425b985570f15ab1d0cbd08055cdd492a613471dbe7b6a13129c";
 
-    public static String generateSecret() throws Exception {
+    public  String generateSecret() throws Exception {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         SecretKey secretKey = keyGen.generateKey();
         return Base64.getEncoder().encodeToString(secretKey.getEncoded());
     }
 
-    public static String fetchPublicKey(String apiKey) throws Exception {
+    public  String fetchPublicKey(String apiKey) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.circle.com/v1/w3s/config/entity/publicKey"))
@@ -61,7 +64,7 @@ public class CircleAPI {
 
     }
 
-    public static String generateCiphertext(String secret) throws Exception {
+    public  String generateCiphertext(String secret) throws Exception {
         byte[] entitySecret = Base64.getDecoder().decode(secret);
         String publicKeyPEM = fetchPublicKey(secret);
         byte[] decoded = Base64.getDecoder().decode(publicKeyPEM);
@@ -75,7 +78,7 @@ public class CircleAPI {
         return Base64.getEncoder().encodeToString(encryptedData);
     }
 
-    public static void createWalletSet() throws Exception {
+    public  void createWalletSet() throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/sets");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -106,61 +109,44 @@ public class CircleAPI {
     }
 
 
-    public static String createWallet() throws Exception {
+    public WalletResDto createWallet() throws Exception {
 
-        HttpClient client = HttpClient.newHttpClient();
         String secret = generateSecret();
         String chipperText = generateCiphertext(secret);
         String idempotencyKey = UUID.randomUUID().toString();
-        System.out.println("chipppere-------------"+chipperText);
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("idempotencyKey", idempotencyKey);
-        requestBody.put("entitySecretCipherText", chipperText);
-        requestBody.put("blockchains", new String[] {"MATIC-AMOY"});
-        requestBody.put("count",1);
-        requestBody.put("walletSetId", WALLET_SET_ID);
+
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.circle.com/v1/w3s/developer/wallets"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + API_KEY)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString(), StandardCharsets.UTF_8))
+                .header("accept", "application/json")
+                .header("content-type", "application/json")
+                .method("POST", HttpRequest.BodyPublishers.ofString("{\"accountType\":\"SCA\",\"idempotencyKey\":\""+idempotencyKey+"\",\"entitySecretCiphertext\":\""+ENCRYPTED_DATA+"\",\"walletSetId\":\""+WALLET_SET_ID+"\"}"))
                 .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println(response.body());
 
         if (response.statusCode() == 200) {
-            return response.body();
+             response.body();
+             return new WalletResDto();
         } else {
             throw new RuntimeException("Failed to create wallet: " + response.statusCode() + " " + response.body());
         }
     }
 
 
-    public static void getWallets() throws Exception {
-        URL url = new URL("https://api-sandbox.circle.com/v1/wallets");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Authorization", "Bearer " + API_KEY);
-
-        int responseCode = conn.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                System.out.println("response: " + response.toString());
-            }
-        } else {
-            System.out.println("GET request failed with response code: " + responseCode);
-        }
+    public  void getWallets() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.circle.com/v1/w3s/wallets?pageSize=10"))
+                .header("accept", "application/json")
+                .header("authorization", "Bearer "+API_KEY)
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println(response.body());
     }
 
-    public static void getWallet(String WALLET_ID_1) throws Exception {
+    public  void getWallet(String WALLET_ID_1) throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/" + WALLET_ID_1);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -183,7 +169,7 @@ public class CircleAPI {
         }
     }
 
-    public static void walletTransactions(String WALLET_ID_1) throws Exception {
+    public  void walletTransactions(String WALLET_ID_1) throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/" + WALLET_ID_1 + "/transactions");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -206,7 +192,7 @@ public class CircleAPI {
         }
     }
 
-    public static void getBalance(String WALLET_ID_2) throws Exception {
+    public  void getBalance(String WALLET_ID_2) throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/" + WALLET_ID_2 + "/balances");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -229,7 +215,7 @@ public class CircleAPI {
         }
     }
 
-    public static void transferToken(String WALLET_ID_1,String WALLET_ADDRESS_2) throws Exception {
+    public  void transferToken(String WALLET_ID_1,String WALLET_ADDRESS_2) throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/" + WALLET_ID_1 + "/transfers");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -265,7 +251,7 @@ public class CircleAPI {
         }
     }
 
-    public static void checkTransferState(String id) throws Exception {
+    public  void checkTransferState(String id) throws Exception {
         URL url = new URL("https://api-sandbox.circle.com/v1/wallets/transfers/" + id);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
