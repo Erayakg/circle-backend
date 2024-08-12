@@ -1,24 +1,28 @@
 package com.CircleBackend.demo.services;
 
-import com.CircleBackend.demo.dto.UserReqDto;
 import com.CircleBackend.demo.dto.UserResDto;
+import com.CircleBackend.demo.dto.UserWalletResDto;
 import com.CircleBackend.demo.entities.User;
+import com.CircleBackend.demo.mapper.UserMapper;
 import com.CircleBackend.demo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Autowired
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     public UserResDto createUser(User user) {
@@ -37,5 +41,12 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User bulunamadı: " + Email));
 
         return passwordEncoder.matches(password, admin.getPassword());
+    }
+
+    public UserWalletResDto getUser(Long id) {
+        Optional<User> byId = userRepository.findById(id);
+        UserWalletResDto dto = userMapper.toDto(byId.get());
+
+        return dto;
     }
 }

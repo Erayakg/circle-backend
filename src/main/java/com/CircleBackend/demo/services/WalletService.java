@@ -1,5 +1,7 @@
 package com.CircleBackend.demo.services;
 
+import com.CircleBackend.demo.dto.TransferTokenReq;
+import com.CircleBackend.demo.dto.WalletBalanceResDto;
 import com.CircleBackend.demo.dto.WalletResDto;
 import com.CircleBackend.demo.entities.User;
 import com.CircleBackend.demo.entities.Wallet;
@@ -62,6 +64,63 @@ public class WalletService {
 
         return null;
     }
+    public WalletResDto getWalletById(Long walletId) throws Exception {
+
+        Wallet byId = walletRepository.getById(walletId);
+        WalletResDto wallet = toDto(walletRepository.getById(walletId));
+        return wallet;
+    }
 
 
+
+
+    private WalletResDto toDto(Wallet wallet)  throws Exception {
+        if (wallet == null) {
+            throw new RuntimeException("Wallet is null");
+        }
+        WalletResDto walletDto = new WalletResDto();
+        walletDto.setAccountType(wallet.getAccountType());
+        walletDto.setWalletSetId(wallet.getWalletSetId());
+        walletDto.setCreateDate(wallet.getCreateDate());
+        walletDto.setState(wallet.getState());
+        walletDto.setBlockchain(wallet.getBlockchain());
+        walletDto.setUpdateDate(wallet.getUpdateDate());
+        walletDto.setAddress(wallet.getAddress());
+        walletDto.setScaCore(wallet.getScaCore());
+        walletDto.setCustodyType(wallet.getCustodyType());
+        walletDto.setId(wallet.getUUIDId());
+        return walletDto;
+    }
+
+    private Wallet toEntity(WalletResDto walletDto)  throws Exception {
+        if (walletDto == null) {
+            throw new RuntimeException("walletDto is null");
+        }
+        Wallet wallet = new Wallet();
+        wallet.setAccountType(walletDto.getAccountType());
+        wallet.setWalletSetId(walletDto.getWalletSetId());
+        wallet.setCreateDate(walletDto.getCreateDate());
+        wallet.setState(walletDto.getState());
+        wallet.setBlockchain(wallet.getBlockchain());
+        wallet.setUpdateDate(walletDto.getUpdateDate());
+        wallet.setAddress(walletDto.getAddress());
+        wallet.setScaCore(walletDto.getScaCore());
+        wallet.setCustodyType(walletDto.getCustodyType());
+        wallet.setUUIDId(walletDto.getId());
+
+        return wallet;
+
+    }
+
+    public WalletBalanceResDto getWalletBalance(String id) throws Exception {
+
+        WalletBalanceResDto walletBalance = circleAPI.getWalletBalance(id);
+
+        return walletBalance;
+    }
+
+    public String transferToken(TransferTokenReq transferTokenReq, Long id) throws Exception {
+        String string = circleAPI.transferToken(transferTokenReq,id);
+        return string;
+    }
 }
