@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
 
     private String firstName;
@@ -17,8 +16,7 @@ public class User {
     private String email;
     private String password;
     private String phone;
-    private String UserId;
-    
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -32,14 +30,13 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String firstName, String lastName, String email, String password, String phone, String userId, Role role, String secreString, String ciphertext, Wallet wallet) {
+    public User(Long id, String firstName, String lastName, String email, String password, String phone , Role role, String secreString, String ciphertext, Wallet wallet) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
         this.phone = phone;
-        UserId = userId;
         this.role = role;
         this.secreString = secreString;
         Ciphertext = ciphertext;
@@ -78,13 +75,6 @@ public class User {
         this.wallet = wallet;
     }
 
-    public String getUserId() {
-        return UserId;
-    }
-
-    public void setUserId(String userId) {
-        UserId = userId;
-    }
 
     public String getFirstName() {
         return firstName;

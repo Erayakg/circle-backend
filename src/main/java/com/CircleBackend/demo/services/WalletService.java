@@ -33,22 +33,27 @@ public class WalletService {
         if (user.isEmpty()){
             throw new RuntimeException("User not found");
         }
-        if (user.get().getWallet() != null) {
+        if (user.get().getWallet() != null){
             throw new RuntimeException("Wallet already exists");
         }
-//        Wallet wallet = new Wallet();
-//        String secreString = circleAPI.generateSecret();
-//        user.get().setSecreString(secreString);
-//
-//        String chipperText = circleAPI.generateCiphertext(secreString);
-//        user.get().setCiphertext(chipperText);
-//        String response= circleAPI.createWallet();
-//        user.get().setWallet(wallet);
-//        System.out.println(response);
 
-            circleAPI.createWallet();
-        return new WalletResDto();
+        WalletResDto wallet = circleAPI.createWallet();
 
+        Wallet saveWallet= new Wallet();
+        saveWallet.setAccountType(wallet.getAccountType());
+        saveWallet.setWalletSetId(wallet.getWalletSetId());
+        saveWallet.setCreateDate(wallet.getCreateDate());
+        saveWallet.setState(wallet.getState());
+        saveWallet.setBlockchain(wallet.getBlockchain());
+        saveWallet.setUUIDId(wallet.getId());
+        saveWallet.setCustodyType(wallet.getCustodyType());
+        saveWallet.setUpdateDate(wallet.getUpdateDate());
+        saveWallet.setAddress(wallet.getAddress());
+        saveWallet.setScaCore(wallet.getScaCore());
+        user.get().setWallet(saveWallet);
+        userRepository.save(user.get());
+
+        return  wallet;
     }
 
     public List<WalletResDto> getAllWallet() throws Exception {

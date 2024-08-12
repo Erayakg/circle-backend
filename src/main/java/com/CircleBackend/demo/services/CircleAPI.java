@@ -1,5 +1,6 @@
 package com.CircleBackend.demo.services;
 import com.CircleBackend.demo.dto.WalletResDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -7,6 +8,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -17,6 +20,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -25,6 +29,9 @@ import java.util.UUID;
 
 @Component
 public class CircleAPI  {
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public static final String API_KEY="TEST_API_KEY:ba4ab1d4b7e92f4a370154dd807be0db:48e096ee7ebc82cec0881ea23131ae2b";
     public static final String WALLET_SET_ID = "76357bcc-4ad4-5b0d-9200-a96a3ed5c129";
@@ -65,17 +72,38 @@ public class CircleAPI  {
     }
 
     public  String generateCiphertext(String secret) throws Exception {
-        byte[] entitySecret = Base64.getDecoder().decode(secret);
-        String publicKeyPEM = fetchPublicKey(secret);
-        byte[] decoded = Base64.getDecoder().decode(publicKeyPEM);
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(decoded);
+
+        byte[] entitySecret = hexToBytes(secret);
+
+        String publicKeyPEM = fetchPublicKey(API_KEY);
+        byte[] decodedKey = Base64.getDecoder().decode(publicKeyPEM);
+
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(decodedKey);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PublicKey publicKey = keyFactory.generatePublic(spec);
 
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        OAEPParameterSpec oaepParams = new OAEPParameterSpec(
+                "SHA-256",
+                "MGF1",
+                MGF1ParameterSpec.SHA256,
+                PSource.PSpecified.DEFAULT
+        );
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepParams);
+
         byte[] encryptedData = cipher.doFinal(entitySecret);
+
         return Base64.getEncoder().encodeToString(encryptedData);
+    }
+
+    private  byte[] hexToBytes(String hexString) {
+        int len = hexString.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
+                    + Character.digit(hexString.charAt(i + 1), 16));
+        }
+        return data;
     }
 
     public  void createWalletSet() throws Exception {
@@ -112,7 +140,7 @@ public class CircleAPI  {
     public WalletResDto createWallet() throws Exception {
 
         String secret = generateSecret();
-        String chipperText = generateCiphertext(secret);
+        String chipperText = generateCiphertext(ENTITY_SECRET);
         String idempotencyKey = UUID.randomUUID().toString();
 
 
@@ -120,18 +148,24 @@ public class CircleAPI  {
                 .uri(URI.create("https://api.circle.com/v1/w3s/developer/wallets"))
                 .header("accept", "application/json")
                 .header("content-type", "application/json")
-                .method("POST", HttpRequest.BodyPublishers.ofString("{\"accountType\":\"SCA\",\"idempotencyKey\":\""+idempotencyKey+"\",\"entitySecretCiphertext\":\""+ENCRYPTED_DATA+"\",\"walletSetId\":\""+WALLET_SET_ID+"\"}"))
+                .header("authorization", "Bearer "+API_KEY)
+                .method("POST", HttpRequest.BodyPublishers.ofString("{\"blockchains\":[\"MATIC-AMOY\"],\"entitySecretCiphertext\":\""+chipperText+"\",\"idempotencyKey\":\""+idempotencyKey+"\",\"accountType\":\"SCA\",\"walletSetId\":\""+WALLET_SET_ID+"\",\"count\":1}"))
                 .build();
         HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println(response.body());
 
-        if (response.statusCode() == 200) {
-             response.body();
-             return new WalletResDto();
-        } else {
-            throw new RuntimeException("Failed to create wallet: " + response.statusCode() + " " + response.body());
-        }
+            String responseBody = response.body();
+
+            WalletResDto walletResDto = objectMapper.readTree(responseBody)
+                    .get("data")
+                    .get("wallets")
+                    .get(0)
+                    .traverse(objectMapper)
+                    .readValueAs(WalletResDto.class);
+
+            return walletResDto;
+
+
     }
 
 
